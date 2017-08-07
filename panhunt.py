@@ -102,6 +102,8 @@ class PAN:
     def is_excluded(pan):
         global excluded_pans
         
+        pan = re.sub('[^\d]','', pan)
+        
         for excluded_pan in excluded_pans:
             if pan == excluded_pan:
                 return True
