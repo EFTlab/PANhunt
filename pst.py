@@ -4,7 +4,7 @@
 #
 # By BB
 # based on MS-PST Microsoft specification for PST file format [MS-PST].pdf v2.1
-# 
+#
 
 import struct, datetime, math, os, sys, unicodedata, re, argparse, itertools, string
 import progressbar
@@ -26,15 +26,15 @@ else:
     to_byte = ord
 
     def is_int(x):
-        return isinstance(x, (int, long))
+        return isinstance(x, int)
 
 ##############################################################################################################################
-#  _   _           _        ____        _        _                       ___   _ ____  ______    _                          
-# | \ | | ___   __| | ___  |  _ \  __ _| |_ __ _| |__   __ _ ___  ___   / / \ | |  _ \| __ ) \  | |    __ _ _   _  ___ _ __ 
+#  _   _           _        ____        _        _                       ___   _ ____  ______    _
+# | \ | | ___   __| | ___  |  _ \  __ _| |_ __ _| |__   __ _ ___  ___   / / \ | |  _ \| __ ) \  | |    __ _ _   _  ___ _ __
 # |  \| |/ _ \ / _` |/ _ \ | | | |/ _` | __/ _` | '_ \ / _` / __|/ _ \ | ||  \| | | | |  _ \| | | |   / _` | | | |/ _ \ '__|
-# | |\  | (_) | (_| |  __/ | |_| | (_| | || (_| | |_) | (_| \__ \  __/ | || |\  | |_| | |_) | | | |__| (_| | |_| |  __/ |   
-# |_| \_|\___/ \__,_|\___| |____/ \__,_|\__\__,_|_.__/ \__,_|___/\___| | ||_| \_|____/|____/| | |_____\__,_|\__, |\___|_|   
-#                                                                       \_\                /_/              |___/          
+# | |\  | (_) | (_| |  __/ | |_| | (_| | || (_| | |_) | (_| \__ \  __/ | || |\  | |_| | |_) | | | |__| (_| | |_| |  __/ |
+# |_| \_|\___/ \__,_|\___| |____/ \__,_|\__\__,_|_.__/ \__,_|___/\___| | ||_| \_|____/|____/| | |_____\__,_|\__, |\___|_|
+#                                                                       \_\                /_/              |___/
 ##############################################################################################################################
 
 
@@ -98,7 +98,7 @@ class BID:
     def __init__(self, bytes):
 
         if len(bytes) == 4: # ansi
-            self.bid = struct.unpack('I', bytes)[0]            
+            self.bid = struct.unpack('I', bytes)[0]
         else: #unicode (8)
             self.bid = struct.unpack('Q', bytes)[0]
         if self.bid % 2 == 1: # A
@@ -184,10 +184,10 @@ class Page:
 
 
 class BTENTRY:
-    
+
     def __init__(self, bytes):
 
-        if len(bytes) == 12: # ansi 
+        if len(bytes) == 12: # ansi
             self.btkey = struct.unpack('I',bytes[:4])[0]
             self.BREF = BREF(bytes[4:])
         else: # unicode 24
@@ -219,11 +219,11 @@ class BBTENTRY:
 
 
 class NBTENTRY:
-    
+
     def __init__(self, bytes):
 
         if len(bytes) == 16: #ansi
-            self.nid, self.bidData, self.bidSub, self.nidParent = struct.unpack('4s4s4s4s',bytes)          
+            self.nid, self.bidData, self.bidSub, self.nidParent = struct.unpack('4s4s4s4s',bytes)
         else: # unicode (32)
             self.nid, padding, self.bidData, self.bidSub, self.nidParent = struct.unpack('4s4s8s8s4s',bytes[:-4])
         self.nid = NID(self.nid)
@@ -231,7 +231,7 @@ class NBTENTRY:
         self.bidSub = BID(self.bidSub)
         self.nidParent = NID(self.nidParent)
         self.key = self.nid.nid
-        
+
 
     def __repr__(self):
 
@@ -244,9 +244,9 @@ class SLENTRY:
     def __init__(self, bytes):
 
         if len(bytes) == 12: #ansi
-            self.nid, self.bidData, self.bidSub = struct.unpack('4s4s4s',bytes)   
+            self.nid, self.bidData, self.bidSub = struct.unpack('4s4s4s',bytes)
         else: # unicode 24
-            self.nid, padding, self.bidData, self.bidSub = struct.unpack('4s4s8s8s',bytes)  
+            self.nid, padding, self.bidData, self.bidSub = struct.unpack('4s4s8s8s',bytes)
         self.nid = NID(self.nid)
         self.bidData = BID(self.bidData)
         self.bidSub = BID(self.bidSub)
@@ -263,9 +263,9 @@ class SIENTRY:
     def __init__(self, bytes):
 
         if len(bytes) == 8: #ansi
-            self.nid, self.bid = struct.unpack('4s4s',bytes)   
+            self.nid, self.bid = struct.unpack('4s4s',bytes)
         else: # unicode 16
-            self.nid, padding, self.bid = struct.unpack('4s4s8s',bytes)  
+            self.nid, padding, self.bid = struct.unpack('4s4s8s',bytes)
         self.nid = NID(self.nid)
         self.bid = BID(self.bid)
 
@@ -274,19 +274,19 @@ class SIENTRY:
 class Block:
 
     # this has the first 512 entries removed, as decoding only uses from 512 onwards
-    mpbbCryptFrom512 = (71, 241, 180, 230, 11, 106, 114, 72, 133, 78, 158, 235, 226, 248, 148, 83, 224, 187, 160, 2, 232, 90, 9, 171, 219, 227, 186, 198, 124, 195, 16, 221, 
-        57, 5, 150, 48, 245, 55, 96, 130, 140, 201, 19, 74, 107, 29, 243, 251, 143, 38, 151, 202, 145, 23, 1, 196, 50, 45, 110, 49, 149, 255, 217, 35, 
-        209, 0, 94, 121, 220, 68, 59, 26, 40, 197, 97, 87, 32, 144, 61, 131, 185, 67, 190, 103, 210, 70, 66, 118, 192, 109, 91, 126, 178, 15, 22, 41, 
-        60, 169, 3, 84, 13, 218, 93, 223, 246, 183, 199, 98, 205, 141, 6, 211, 105, 92, 134, 214, 20, 247, 165, 102, 117, 172, 177, 233, 69, 33, 112, 12, 
-        135, 159, 116, 164, 34, 76, 111, 191, 31, 86, 170, 46, 179, 120, 51, 80, 176, 163, 146, 188, 207, 25, 28, 167, 99, 203, 30, 77, 62, 75, 27, 155, 
-        79, 231, 240, 238, 173, 58, 181, 89, 4, 234, 64, 85, 37, 81, 229, 122, 137, 56, 104, 82, 123, 252, 39, 174, 215, 189, 250, 7, 244, 204, 142, 95, 
-        239, 53, 156, 132, 43, 21, 213, 119, 52, 73, 182, 18, 10, 127, 113, 136, 253, 157, 24, 65, 125, 147, 216, 88, 44, 206, 254, 36, 175, 222, 184, 54, 
+    mpbbCryptFrom512 = (71, 241, 180, 230, 11, 106, 114, 72, 133, 78, 158, 235, 226, 248, 148, 83, 224, 187, 160, 2, 232, 90, 9, 171, 219, 227, 186, 198, 124, 195, 16, 221,
+        57, 5, 150, 48, 245, 55, 96, 130, 140, 201, 19, 74, 107, 29, 243, 251, 143, 38, 151, 202, 145, 23, 1, 196, 50, 45, 110, 49, 149, 255, 217, 35,
+        209, 0, 94, 121, 220, 68, 59, 26, 40, 197, 97, 87, 32, 144, 61, 131, 185, 67, 190, 103, 210, 70, 66, 118, 192, 109, 91, 126, 178, 15, 22, 41,
+        60, 169, 3, 84, 13, 218, 93, 223, 246, 183, 199, 98, 205, 141, 6, 211, 105, 92, 134, 214, 20, 247, 165, 102, 117, 172, 177, 233, 69, 33, 112, 12,
+        135, 159, 116, 164, 34, 76, 111, 191, 31, 86, 170, 46, 179, 120, 51, 80, 176, 163, 146, 188, 207, 25, 28, 167, 99, 203, 30, 77, 62, 75, 27, 155,
+        79, 231, 240, 238, 173, 58, 181, 89, 4, 234, 64, 85, 37, 81, 229, 122, 137, 56, 104, 82, 123, 252, 39, 174, 215, 189, 250, 7, 244, 204, 142, 95,
+        239, 53, 156, 132, 43, 21, 213, 119, 52, 73, 182, 18, 10, 127, 113, 136, 253, 157, 24, 65, 125, 147, 216, 88, 44, 206, 254, 36, 175, 222, 184, 54,
         200, 161, 128, 166, 153, 152, 168, 47, 14, 129, 101, 115, 228, 194, 162, 138, 212, 225, 17, 208, 8, 139, 42, 242, 237, 154, 100, 63, 193, 108, 249, 236)
 
     if sys.hexversion >= 0x03000000:
-        decrypt_table = bytes.maketrans(bytearray(range(256)), bytearray(mpbbCryptFrom512))
+        decrypt_table = bytes.maketrans(bytearray(list(range(256))), bytearray(mpbbCryptFrom512))
     else:
-        decrypt_table = string.maketrans(b''.join(map(chr, range(256))), b''.join(map(chr, mpbbCryptFrom512)))
+        decrypt_table = string.maketrans(b''.join(map(chr, list(range(256)))), b''.join(map(chr, mpbbCryptFrom512)))
 
     btypeData = 0
     btypeXBLOCK = 1
@@ -330,8 +330,8 @@ class Block:
 
         else: # XBLOCK, XXBLOCK, SLBLOCK or SIBLOCK
 
-            self.btype, self.cLevel, self.cEnt = struct.unpack('BBH',bytes[:4])      
-              
+            self.btype, self.cLevel, self.cEnt = struct.unpack('BBH',bytes[:4])
+
             if self.btype == 1: #XBLOCK, XXBLOCK
                 self.lcbTotal = struct.unpack('I',bytes[4:8])[0]
                 if self.cLevel == 1: #XBLOCK
@@ -339,16 +339,16 @@ class Block:
                 elif self.cLevel == 2: #XXBLOCK
                     self.block_type = Block.btypeXXBLOCK
                 else:
-                    raise PSTException('Invalid Block Level %s' % self.cLevel) 
+                    raise PSTException('Invalid Block Level %s' % self.cLevel)
                 self.rgbid = []
                 for i in range(self.cEnt):
                     self.rgbid.append(BID(bytes[8+i*bid_size:8+(i+1)*bid_size]))
 
-            elif self.btype == 2: # SLBLOCK, SIBLOCK 
+            elif self.btype == 2: # SLBLOCK, SIBLOCK
 
                 self.rgentries = []
                 if self.cLevel == 0: #SLBLOCK
-                    self.block_type = Block.btypeSLBLOCK                   
+                    self.block_type = Block.btypeSLBLOCK
                     for i in range(self.cEnt):
                         self.rgentries.append(SLENTRY(bytes[sl_si_entries_offset + i*slentry_size:sl_si_entries_offset + (i+1)*slentry_size]))
                 elif self.cLevel ==1: #SIBLOCK
@@ -356,10 +356,10 @@ class Block:
                     for i in range(self.cEnt):
                         self.rgentries.append(SIENTRY(bytes[sl_si_entries_offset + i*sientry_size:sl_si_entries_offset + (i+1)*sientry_size]))
                 else:
-                    raise PSTException('Invalid Block Level %s' % self.cLevel) 
+                    raise PSTException('Invalid Block Level %s' % self.cLevel)
 
             else:
-                raise PSTException('Invalid Block Type %s' % self.btype) 
+                raise PSTException('Invalid Block Type %s' % self.btype)
 
 
     def __repr__(self):
@@ -384,7 +384,7 @@ class NBD:
         self.fd.seek(offset)
         return Page(self.fd.read(Page.PAGE_SIZE), self.header.is_ansi)
 
-        
+
     def fetch_block(self, bid):
 
         try:
@@ -419,34 +419,34 @@ class NBD:
             for xbid in block.rgbid:
                 xblock = self.fetch_block(xbid)
                 if xblock.block_type != Block.btypeData:
-                    raise PSTException('Expecting data block, got block type %s' % xblock.block_type) 
+                    raise PSTException('Expecting data block, got block type %s' % xblock.block_type)
                 datas.append(xblock.data)
         elif block.block_type == Block.btypeXXBLOCK:
             for xxbid in block.rgbid:
                 xxblock = self.fetch_block(xxbid)
                 if xxblock.block_type != Block.btypeXBLOCK:
-                    raise PSTException('Expecting XBLOCK, got block type %s' % xxblock.block_type) 
+                    raise PSTException('Expecting XBLOCK, got block type %s' % xxblock.block_type)
                 datas.extend(self.fetch_all_block_data(xxbid))
         else:
-            raise PSTException('Invalid block type (not data/XBLOCK/XXBLOCK), got %s' % block.block_type) 
+            raise PSTException('Invalid block type (not data/XBLOCK/XXBLOCK), got %s' % block.block_type)
         return datas
 
 
     def fetch_subnodes(self, bid):
         """ get dictionary of subnode SLENTRYs for subnode bid"""
-        
+
         subnodes = {}
         block = self.fetch_block(bid)
         if block.block_type == Block.btypeSLBLOCK:
             for slentry in block.rgentries:
-                if slentry.nid in subnodes.keys():
+                if slentry.nid in list(subnodes.keys()):
                     raise PSTException('Duplicate subnode %s' % slentry.nid)
                 subnodes[slentry.nid.nid] = slentry
         elif block.block_type == Block.btypeSIBLOCK:
             for sientry in block.rgentries:
                 subnodes.update(self.fetch_subnodes(sientry.bid))
         else:
-            raise PSTException('Invalid block type (not SLBLOCK/SIBLOCK), got %s' % block.block_type) 
+            raise PSTException('Invalid block type (not SLBLOCK/SIBLOCK), got %s' % block.block_type)
         return subnodes
 
 
@@ -457,11 +457,11 @@ class NBD:
         page = self.fetch_page(page_offset)
         for entry in page.rgEntries:
             if isinstance(entry, entry_type):
-                if entry.key in leaf_entries.keys():
+                if entry.key in list(leaf_entries.keys()):
                     raise PSTException('Invalid Leaf Key %s' % entry)
                 leaf_entries[entry.key] = entry
             elif isinstance(entry, BTENTRY):
-                leaf_entries.update(self.get_page_leaf_entries(entry_type, entry.BREF.ib))                
+                leaf_entries.update(self.get_page_leaf_entries(entry_type, entry.BREF.ib))
             else:
                 raise PSTException('Invalid Entry Type')
         return leaf_entries
@@ -469,12 +469,12 @@ class NBD:
 
 
 ################################################################################################################################################################################
-#  _     _     _           _____     _     _                               _   ____                            _   _              ___   _____ ______    _                          
-# | |   (_)___| |_ ___    |_   _|_ _| |__ | | ___  ___      __ _ _ __   __| | |  _ \ _ __ ___  _ __   ___ _ __| |_(_) ___  ___   / / | |_   _|  _ \ \  | |    __ _ _   _  ___ _ __ 
+#  _     _     _           _____     _     _                               _   ____                            _   _              ___   _____ ______    _
+# | |   (_)___| |_ ___    |_   _|_ _| |__ | | ___  ___      __ _ _ __   __| | |  _ \ _ __ ___  _ __   ___ _ __| |_(_) ___  ___   / / | |_   _|  _ \ \  | |    __ _ _   _  ___ _ __
 # | |   | / __| __/ __|     | |/ _` | '_ \| |/ _ \/ __|    / _` | '_ \ / _` | | |_) | '__/ _ \| '_ \ / _ \ '__| __| |/ _ \/ __| | || |   | | | |_) | | | |   / _` | | | |/ _ \ '__|
-# | |___| \__ \ |_\__ \_    | | (_| | |_) | |  __/\__ \_  | (_| | | | | (_| | |  __/| | | (_) | |_) |  __/ |  | |_| |  __/\__ \ | || |___| | |  __/| | | |__| (_| | |_| |  __/ |   
-# |_____|_|___/\__|___( )   |_|\__,_|_.__/|_|\___||___( )  \__,_|_| |_|\__,_| |_|   |_|  \___/| .__/ \___|_|   \__|_|\___||___/ | ||_____|_| |_|   | | |_____\__,_|\__, |\___|_|   
-#                     |/                              |/                                      |_|                                \_\              /_/              |___/           
+# | |___| \__ \ |_\__ \_    | | (_| | |_) | |  __/\__ \_  | (_| | | | | (_| | |  __/| | | (_) | |_) |  __/ |  | |_| |  __/\__ \ | || |___| | |  __/| | | |__| (_| | |_| |  __/ |
+# |_____|_|___/\__|___( )   |_|\__,_|_.__/|_|\___||___( )  \__,_|_| |_|\__,_| |_|   |_|  \___/| .__/ \___|_|   \__|_|\___||___/ | ||_____|_| |_|   | | |_____\__,_|\__, |\___|_|
+#                     |/                              |/                                      |_|                                \_\              /_/              |___/
 ################################################################################################################################################################################
 
 
@@ -499,8 +499,8 @@ class HNPAGEMAP:
         self.rgibAlloc = []
         for i in range(self.cAlloc+1): # cAlloc+1 is next free
             self.rgibAlloc.append(struct.unpack('H', bytes[4+i*2:4+(i+1)*2])[0])
-    
-    
+
+
 
 class HN:
 
@@ -525,11 +525,11 @@ class HN:
             else: # HNPAGEHDR or HNBITMAPHDR
                 ibHnpm = struct.unpack('H', bytes[:2])[0]
             self.hnpagemaps.append(HNPAGEMAP(bytes[ibHnpm:]))
-        
+
         # subnode SLENTRYs
         self.subnodes = None
         if self.nbt_entry.bidSub.bid != 0:
-            self.subnodes = self.ltp.nbd.fetch_subnodes(self.nbt_entry.bidSub)            
+            self.subnodes = self.ltp.nbd.fetch_subnodes(self.nbt_entry.bidSub)
 
 
     def get_hid_data(self, hid):
@@ -574,7 +574,7 @@ class BTH:
         self.bType, self.cbKey, self.cbEnt, self.bIdxLevels, self.hidRoot = struct.unpack('BBBB4s', bth_header_bytes)
         self.hidRoot = HID(self.hidRoot)
         if self.bType != HN.bTypeBTH:
-            raise PSTException('Invalid BTH Type %s' % self.bType)        
+            raise PSTException('Invalid BTH Type %s' % self.bType)
         self.bth_datas = []
         bth_working_stack = []
         if self.hidRoot != 0:
@@ -592,7 +592,7 @@ class BTH:
                         self.bth_datas.extend(bth_record_list)
                     else:
                         bth_working_stack.extend(bth_record_list)
-             
+
 
     def get_bth_records(self, bytes, bIdxLevel):
 
@@ -626,14 +626,14 @@ class PCBTHData:
                self.value = ptype.value(self.dwValueHnid[:ptype.byte_count])
            else:
                self.hid = HID(self.dwValueHnid)
-               self.value = ptype.value(hn.get_hid_data(self.hid)) 
+               self.value = ptype.value(hn.get_hid_data(self.hid))
         else:
             if NID(self.dwValueHnid).nidType == NID.NID_TYPE_HID:
                 self.hid = HID(self.dwValueHnid)
                 self.value = ptype.value(hn.get_hid_data(self.hid))
             else:
                 self.subnode_nid = NID(self.dwValueHnid)
-                if self.subnode_nid.nid in hn.subnodes.keys():
+                if self.subnode_nid.nid in list(hn.subnodes.keys()):
                     subnode_nid_bid = hn.subnodes[self.subnode_nid.nid].bidData
                 else:
                     raise PSTException('Invalid NID subnode reference %s' % self.subnode_nid)
@@ -688,7 +688,7 @@ class PType:
     def __init__(self, ptype, byte_count, is_variable, is_multi):
 
         self.ptype, self.byte_count, self.is_variable, self.is_multi = ptype, byte_count, is_variable, is_multi
-    
+
     def value(self, bytes):
 
         if self.ptype ==  PTypeEnum.PtypInteger16:
@@ -919,9 +919,9 @@ class PC: # Property Context
 
 
     def getval(self, propid):
-        
-        if propid in self.props.keys():
-            return self.props[propid].value 
+
+        if propid in list(self.props.keys()):
+            return self.props[propid].value
         else:
             return None
 
@@ -986,7 +986,7 @@ class TC: # Table Context
         self.rgTCOLDESC = []
         for i in range(self.cCols):
             self.rgTCOLDESC.append(TCOLDESC(tcinfo_bytes[22+i*8:22+(i+1)*8]))
-        
+
         self.setup_row_index()
         self.setup_row_matrix()
 
@@ -1002,7 +1002,7 @@ class TC: # Table Context
                 tcrowid = TCROWID(bth_data)
                 self.RowIndex[tcrowid.dwRowIndex] = tcrowid
 
-    
+
     def setup_row_matrix(self):
 
         self.RowMatrix = {}
@@ -1016,7 +1016,7 @@ class TC: # Table Context
             if self.hnidRows.is_hid:
                 row_matrix_datas = [self.hn.get_hid_data(self.hnidRows)] # block data list
             else:
-                if self.hnidRows.nid in self.hn.subnodes.keys():
+                if self.hnidRows.nid in list(self.hn.subnodes.keys()):
                     subnode_nid_bid = self.hn.subnodes[self.hnidRows.nid].bidData
                 else:
                     raise PSTException('Row Matrix HNID not in Subnodes: %s' % self.hnidRows.nid)
@@ -1027,7 +1027,7 @@ class TC: # Table Context
                 RowIndex = irow % RowsPerBlock
                 row_bytes = row_matrix_datas[BlockIndex][RowIndex * row_size:(RowIndex+1) * row_size]
                 dwRowID = struct.unpack('I', row_bytes[:4])[0]
-                rgbCEB = row_bytes[self.rgib[TC.TCI_1b]:]                
+                rgbCEB = row_bytes[self.rgib[TC.TCI_1b]:]
                 #row_datas = []
                 rowvals = {}
                 for tcoldesc in self.rgTCOLDESC:
@@ -1037,11 +1037,11 @@ class TC: # Table Context
                     else:
                         data_bytes = None
                     #row_datas.append(self.get_row_cell_value(data_bytes, tcoldesc))
-                    if tcoldesc.wPropId in rowvals.keys():
+                    if tcoldesc.wPropId in list(rowvals.keys()):
                         raise PSTException('Property ID %s already in row data' % hex(tcoldesc.wPropId))
                     rowvals[tcoldesc.wPropId] = self.get_row_cell_value(data_bytes, tcoldesc)
                 self.RowMatrix[dwRowID] = rowvals #row_datas
-        
+
 
     def get_row_cell_value(self, data_bytes, tcoldesc):
 
@@ -1055,14 +1055,14 @@ class TC: # Table Context
                    return ptype.value(data_bytes)
                else:
                    hid = HID(data_bytes)
-                   return ptype.value(self.hn.get_hid_data(hid)) 
+                   return ptype.value(self.hn.get_hid_data(hid))
             else:
                 if NID(data_bytes).nidType == NID.NID_TYPE_HID:
                     hid = HID(data_bytes)
                     return ptype.value(self.hn.get_hid_data(hid))
                 else:
                     subnode_nid = NID(data_bytes)
-                    if subnode_nid.nid in self.hn.subnodes.keys():
+                    if subnode_nid.nid in list(self.hn.subnodes.keys()):
                         subnode_nid_bid = self.hn.subnodes[subnode_nid.nid].bidData
                     else:
                         raise PSTException('Row Matrix Value HNID Subnode invalid: %s' % subnode_nid)
@@ -1079,7 +1079,7 @@ class TC: # Table Context
 
         dwRowID = self.get_row_ID(RowIndex)
         rowvals = self.RowMatrix[dwRowID]
-        if wPropId in rowvals.keys():
+        if wPropId in list(rowvals.keys()):
             return rowvals[wPropId]
         else:
             return None
@@ -1089,7 +1089,7 @@ class TC: # Table Context
 
         s = 'TC Rows: %s, %s\n' % (len(self.RowIndex), self.hn)
         s += 'Columns: ' + ''.join([' %s' % tcoldesc for tcoldesc in self.rgTCOLDESC])
-        s += '\nData:\n' + '\n'.join(['%s: %s' % (hex(dwRowID), rowvals) for dwRowID,rowvals in self.RowMatrix.items()])
+        s += '\nData:\n' + '\n'.join(['%s: %s' % (hex(dwRowID), rowvals) for dwRowID,rowvals in list(self.RowMatrix.items())])
         return s
 
 
@@ -1101,38 +1101,38 @@ class LTP:
 
         self.nbd = nbd
 
-        self.ptypes = {              
+        self.ptypes = {
             PTypeEnum.PtypInteger16:PType(PTypeEnum.PtypInteger16, 2, False, False),
-            PTypeEnum.PtypInteger32:PType(PTypeEnum.PtypInteger32, 4, False, False), 
-            PTypeEnum.PtypFloating32:PType(PTypeEnum.PtypFloating32, 4, False, False), 
-            PTypeEnum.PtypFloating64:PType(PTypeEnum.PtypFloating64, 8, False, False), 
-            PTypeEnum.PtypCurrency:PType(PTypeEnum.PtypCurrency, 8, False, False), 
-            PTypeEnum.PtypFloatingTime:PType(PTypeEnum.PtypFloatingTime, 8, False, False), 
-            PTypeEnum.PtypErrorCode:PType(PTypeEnum.PtypErrorCode, 4, False, False), 
-            PTypeEnum.PtypBoolean:PType(PTypeEnum.PtypBoolean, 1, False, False), 
-            PTypeEnum.PtypInteger64:PType(PTypeEnum.PtypInteger64, 8, False, False), 
-            PTypeEnum.PtypString:PType(PTypeEnum.PtypString, 0, True, False), 
-            PTypeEnum.PtypString8:PType(PTypeEnum.PtypString8, 0, True, False), 
-            PTypeEnum.PtypTime:PType(PTypeEnum.PtypTime, 8, False, False), 
+            PTypeEnum.PtypInteger32:PType(PTypeEnum.PtypInteger32, 4, False, False),
+            PTypeEnum.PtypFloating32:PType(PTypeEnum.PtypFloating32, 4, False, False),
+            PTypeEnum.PtypFloating64:PType(PTypeEnum.PtypFloating64, 8, False, False),
+            PTypeEnum.PtypCurrency:PType(PTypeEnum.PtypCurrency, 8, False, False),
+            PTypeEnum.PtypFloatingTime:PType(PTypeEnum.PtypFloatingTime, 8, False, False),
+            PTypeEnum.PtypErrorCode:PType(PTypeEnum.PtypErrorCode, 4, False, False),
+            PTypeEnum.PtypBoolean:PType(PTypeEnum.PtypBoolean, 1, False, False),
+            PTypeEnum.PtypInteger64:PType(PTypeEnum.PtypInteger64, 8, False, False),
+            PTypeEnum.PtypString:PType(PTypeEnum.PtypString, 0, True, False),
+            PTypeEnum.PtypString8:PType(PTypeEnum.PtypString8, 0, True, False),
+            PTypeEnum.PtypTime:PType(PTypeEnum.PtypTime, 8, False, False),
             PTypeEnum.PtypGuid:PType(PTypeEnum.PtypGuid, 16, False, False),
-            PTypeEnum.PtypServerId:PType(PTypeEnum.PtypServerId, 2, False, True), 
-            PTypeEnum.PtypRestriction:PType(PTypeEnum.PtypRestriction, 0, True, False), 
-            PTypeEnum.PtypRuleAction:PType(PTypeEnum.PtypRuleAction, 2, False, True), 
-            PTypeEnum.PtypBinary:PType(PTypeEnum.PtypBinary, 2, False, True), 
-            PTypeEnum.PtypMultipleInteger16:PType(PTypeEnum.PtypMultipleInteger16, 2, False, True), 
-            PTypeEnum.PtypMultipleInteger32:PType(PTypeEnum.PtypMultipleInteger32, 2, False, True), 
-            PTypeEnum.PtypMultipleFloating32:PType(PTypeEnum.PtypMultipleFloating32, 2, False, True), 
-            PTypeEnum.PtypMultipleFloating64:PType(PTypeEnum.PtypMultipleFloating64, 2, False, True), 
-            PTypeEnum.PtypMultipleCurrency:PType(PTypeEnum.PtypMultipleCurrency, 2, False, True), 
+            PTypeEnum.PtypServerId:PType(PTypeEnum.PtypServerId, 2, False, True),
+            PTypeEnum.PtypRestriction:PType(PTypeEnum.PtypRestriction, 0, True, False),
+            PTypeEnum.PtypRuleAction:PType(PTypeEnum.PtypRuleAction, 2, False, True),
+            PTypeEnum.PtypBinary:PType(PTypeEnum.PtypBinary, 2, False, True),
+            PTypeEnum.PtypMultipleInteger16:PType(PTypeEnum.PtypMultipleInteger16, 2, False, True),
+            PTypeEnum.PtypMultipleInteger32:PType(PTypeEnum.PtypMultipleInteger32, 2, False, True),
+            PTypeEnum.PtypMultipleFloating32:PType(PTypeEnum.PtypMultipleFloating32, 2, False, True),
+            PTypeEnum.PtypMultipleFloating64:PType(PTypeEnum.PtypMultipleFloating64, 2, False, True),
+            PTypeEnum.PtypMultipleCurrency:PType(PTypeEnum.PtypMultipleCurrency, 2, False, True),
             PTypeEnum.PtypMultipleFloatingTime:PType(PTypeEnum.PtypMultipleFloatingTime, 2, False, True),
-            PTypeEnum.PtypMultipleInteger64:PType(PTypeEnum.PtypMultipleInteger64, 2, False, True), 
-            PTypeEnum.PtypMultipleString:PType(PTypeEnum.PtypMultipleString, 2, True, True), 
-            PTypeEnum.PtypMultipleString8:PType(PTypeEnum.PtypMultipleString8, 2, True, True), 
-            PTypeEnum.PtypMultipleTime:PType(PTypeEnum.PtypMultipleTime, 2, False, True), 
-            PTypeEnum.PtypMultipleGuid:PType(PTypeEnum.PtypMultipleGuid, 2, False, True), 
-            PTypeEnum.PtypMultipleBinary:PType(PTypeEnum.PtypMultipleBinary, 2, False, True), 
-            PTypeEnum.PtypUnspecified:PType(PTypeEnum.PtypUnspecified, 0, False, False), 
-            PTypeEnum.PtypNull:PType(PTypeEnum.PtypNull, 0, False, False), 
+            PTypeEnum.PtypMultipleInteger64:PType(PTypeEnum.PtypMultipleInteger64, 2, False, True),
+            PTypeEnum.PtypMultipleString:PType(PTypeEnum.PtypMultipleString, 2, True, True),
+            PTypeEnum.PtypMultipleString8:PType(PTypeEnum.PtypMultipleString8, 2, True, True),
+            PTypeEnum.PtypMultipleTime:PType(PTypeEnum.PtypMultipleTime, 2, False, True),
+            PTypeEnum.PtypMultipleGuid:PType(PTypeEnum.PtypMultipleGuid, 2, False, True),
+            PTypeEnum.PtypMultipleBinary:PType(PTypeEnum.PtypMultipleBinary, 2, False, True),
+            PTypeEnum.PtypUnspecified:PType(PTypeEnum.PtypUnspecified, 0, False, False),
+            PTypeEnum.PtypNull:PType(PTypeEnum.PtypNull, 0, False, False),
             PTypeEnum.PtypObject:PType(PTypeEnum.PtypObject, 4, False, True)
         }
 
@@ -1179,12 +1179,12 @@ class LTP:
 
 
 #############################################################################################################################
-#  __  __                           _               _                          
-# |  \/  | ___  ___ ___  __ _  __ _(_)_ __   __ _  | |    __ _ _   _  ___ _ __ 
+#  __  __                           _               _
+# |  \/  | ___  ___ ___  __ _  __ _(_)_ __   __ _  | |    __ _ _   _  ___ _ __
 # | |\/| |/ _ \/ __/ __|/ _` |/ _` | | '_ \ / _` | | |   / _` | | | |/ _ \ '__|
-# | |  | |  __/\__ \__ \ (_| | (_| | | | | | (_| | | |__| (_| | |_| |  __/ |   
-# |_|  |_|\___||___/___/\__,_|\__, |_|_| |_|\__, | |_____\__,_|\__, |\___|_|   
-#                             |___/         |___/              |___/           
+# | |  | |  __/\__ \__ \ (_| | (_| | | | | | (_| | | |__| (_| | |_| |  __/ |
+# |_|  |_|\___||___/___/\__,_|\__, |_|_| |_|\__, | |_____\__,_|\__, |\___|_|
+#                             |___/         |___/              |___/
 #############################################################################################################################
 
 
@@ -1269,7 +1269,7 @@ class Folder:
             self.submessages = [SubMessage(self.tc_contents.RowIndex[RowIndex].nid, \
                     self.tc_contents.getval(RowIndex,PropIdEnum.PidTagSentRepresentingNameW), ltp.strip_SubjectPrefix(self.tc_contents.getval(RowIndex,PropIdEnum.PidTagSubjectW)), \
                     self.tc_contents.getval(RowIndex,PropIdEnum.PidTagClientSubmitTime)) \
-                    for RowIndex in range(len(self.tc_contents.RowIndex)) if RowIndex in self.tc_contents.RowIndex.keys()]
+                    for RowIndex in range(len(self.tc_contents.RowIndex)) if RowIndex in list(self.tc_contents.RowIndex.keys())]
         except PSTException as e:
             log_error(e)
 
@@ -1277,7 +1277,7 @@ class Folder:
             self.tc_fai = None
             self.tc_fai = ltp.get_tc_by_nid(nid_fai)
         except PSTException as e:
-            log_error(e)  
+            log_error(e)
 
 
     def __repr__(self):
@@ -1298,7 +1298,7 @@ class SubAttachment:
         if self.Filename:
             self.Filename = os.path.basename(self.Filename)
         else:
-            self.Filename = '[None]' 
+            self.Filename = '[None]'
 
     def __repr__(self):
 
@@ -1373,28 +1373,28 @@ class Message:
         self.tc_attachments = None
         self.tc_recipients = None
         if self.pc.hn.subnodes:
-            for subnode in self.pc.hn.subnodes.values(): #SLENTRYs
+            for subnode in list(self.pc.hn.subnodes.values()): #SLENTRYs
                 if subnode.nid.nidType == NID.NID_TYPE_ATTACHMENT_TABLE:
                     self.tc_attachments = self.ltp.get_tc_by_slentry(subnode)
                 elif subnode.nid.nidType == NID.NID_TYPE_RECIPIENT_TABLE:
                     self.tc_recipients = ltp.get_tc_by_slentry(subnode)
-        
+
         self.subattachments = []
         if self.tc_attachments:
             self.subattachments = [SubAttachment(self.tc_attachments.RowIndex[RowIndex].nid, self.tc_attachments.getval(RowIndex,PropIdEnum.PidTagAttachmentSize), \
                     self.tc_attachments.getval(RowIndex,PropIdEnum.PidTagAttachFilename), self.tc_attachments.getval(RowIndex,PropIdEnum.PidTagAttachLongFilename)) for RowIndex in range(len(self.tc_attachments.RowIndex))]
-        
+
         self.subrecipients = []
         if self.tc_recipients:
             self.subrecipients = [SubRecipient(self.tc_recipients.getval(RowIndex,PropIdEnum.PidTagRecipientType), self.tc_recipients.getval(RowIndex,PropIdEnum.PidTagDisplayName), \
                     self.tc_recipients.getval(RowIndex,PropIdEnum.PidTagObjectType), self.tc_recipients.getval(RowIndex,PropIdEnum.PidTagAddressType), \
                     self.tc_recipients.getval(RowIndex,PropIdEnum.PidTagEmailAddress), self.tc_recipients.getval(RowIndex,PropIdEnum.PidTagDisplayType), \
                     self.tc_recipients.getval(RowIndex,PropIdEnum.PidTagEntryID)) for RowIndex in range(len(self.tc_recipients.RowIndex))]
-        
+
 
     def get_attachment(self, subattachment):
         """ fetch attachment on demand, not when Message instanced"""
-            
+
         return Attachment(self.ltp, self.pc.hn.subnodes[subattachment.nid.nid])
 
 
@@ -1430,8 +1430,8 @@ class Attachment:
         if self.Filename:
             self.Filename = os.path.basename(self.Filename)
         else:
-            self.Filename = '[NoFilename_Method%s]' % self.AttachMethod        
-        
+            self.Filename = '[NoFilename_Method%s]' % self.AttachMethod
+
         if self.AttachMethod == Message.afByValue:
             self.data = self.pc.getval(PropIdEnum.PidTagAttachDataBinary)
         else:
@@ -1476,7 +1476,7 @@ class Messaging:
         self.message_store = self.ltp.get_pc_by_nid(NID(NID.NID_MESSAGE_STORE))
         self.store_record_key = self.message_store.getval(PropIdEnum.PidTagRecordKey)
 
-        if PropIdEnum.PidTagPstPassword in self.message_store.props.keys():
+        if PropIdEnum.PidTagPstPassword in list(self.message_store.props.keys()):
             self.PasswordCRC32Hash = struct.unpack('I', struct.pack('i', self.message_store.getval(PropIdEnum.PidTagPstPassword)))[0]
         else:
             self.PasswordCRC32Hash = None
@@ -1518,12 +1518,12 @@ class Messaging:
 
 
 #############################################################################################################################
-#  ____  ____ _____   _                          
-# |  _ \/ ___|_   _| | |    __ _ _   _  ___ _ __ 
+#  ____  ____ _____   _
+# |  _ \/ ___|_   _| | |    __ _ _   _  ___ _ __
 # | |_) \___ \ | |   | |   / _` | | | |/ _ \ '__|
-# |  __/ ___) || |   | |__| (_| | |_| |  __/ |   
-# |_|   |____/ |_|   |_____\__,_|\__, |\___|_|   
-#                                |___/           
+# |  __/ ___) || |   | |__| (_| | |_| |  __/ |
+# |_|   |____/ |_|   |_____\__,_|\__, |\___|_|
+#                                |___/
 #############################################################################################################################
 
 
@@ -1796,7 +1796,7 @@ class CRC:
     @staticmethod
     def ComputeCRC(pv):
         """ from [MS-PST]. dwCRC is zero. pv is bytes to CRC. cbLength is length of pv """
-            
+
         dwCRC = 0
         cbLength = len(pv)
         if cbLength < 4:
@@ -1830,11 +1830,11 @@ class FieldSize:
 
 
 class Header:
-    
+
     def __init__(self, fd):
 
         # common ansi/unicode fields
-        fd.seek(0)       
+        fd.seek(0)
         self.dwMagic = fd.read(FieldSize.DWORD)
         self.dwCRCPartial = fd.read(FieldSize.DWORD) # ignore
         self.wMagicClient = fd.read(FieldSize.WORD)
@@ -1874,7 +1874,7 @@ class Header:
             self.rgbReserved3 = fd.read(32) # unused
 
         if self.is_unicode:
-            self.bidUnused = fd.read(FieldSize.ANSIDWORD) # unused 
+            self.bidUnused = fd.read(FieldSize.ANSIDWORD) # unused
             self.bidNextP = BID(fd.read(FieldSize.ANSIDWORD))
             #self.bidNextB = fd.read(FieldSize.ANSIDWORD) # the spec is wrong, example in appendix is correct
             self.dwUnique = fd.read(FieldSize.DWORD) # ignore
@@ -1938,7 +1938,7 @@ class PST:
         yield root_folder
 
         #Deleted Items should also be in root folder, so don't need to get this one
-        #bin_folder = self.messaging.get_folder(self.messaging.deleted_items_entryid, '')        
+        #bin_folder = self.messaging.get_folder(self.messaging.deleted_items_entryid, '')
         #subfolder_stack.extend(bin_folder.subfolders)
         #yield bin_folder
 
@@ -1949,7 +1949,7 @@ class PST:
                 subfolder_stack.extend(folder.subfolders)
                 yield folder
             except PSTException as e:
-                log_error(e)    
+                log_error(e)
 
 
     def message_generator(self, folder):
@@ -1960,13 +1960,13 @@ class PST:
                     message = Message(submessage.nid, self.ltp, messaging=self.messaging)
                     yield message
                 except PSTException as e:
-                    log_error(e)                 
+                    log_error(e)
         except GeneratorExit:
             pass
-        finally: 
+        finally:
             pass
 
-  
+
     def export_all_attachments(self, path='', progressbar = None, total_attachments = 0, overwrite=True):
         """dumps all attachments in the PST to a path"""
 
@@ -1977,7 +1977,7 @@ class PST:
                     for subattachment in message.subattachments:
                         attachment = message.get_attachment(subattachment)
                         if len(attachment.data) !=0:
-                            filepath = os.path.join(path, attachment.Filename)                        
+                            filepath = os.path.join(path, attachment.Filename)
                             if overwrite:
                                 if os.path.exists(filepath):
                                     os.remove(filepath)
@@ -1994,15 +1994,15 @@ class PST:
         messages_completed = 0
         for folder in self.folder_generator():
             filepath = get_unused_filename(os.path.join(path, get_safe_filename(folder.path.replace('\\','_'))+'.txt'))
-            msg_txt = u''
+            msg_txt = ''
             for message in self.message_generator(folder):
-                msg_txt += u'Subject: %s\nFrom: %s (%s)\n' % (message.Subject, message.SenderName, message.SenderSmtpAddress)
-                msg_txt += u'To: %s\n' % ('; '.join([u'%s (%s)' % (subrecipient.DisplayName, subrecipient.EmailAddress) for subrecipient in message.subrecipients]))
-                msg_txt += u'Sent: %s\nDelivered: %s\n' % (message.ClientSubmitTime, message.MessageDeliveryTime)
-                msg_txt += u'MessageClass: %s\n' % (message.MessageClass)
+                msg_txt += 'Subject: %s\nFrom: %s (%s)\n' % (message.Subject, message.SenderName, message.SenderSmtpAddress)
+                msg_txt += 'To: %s\n' % ('; '.join(['%s (%s)' % (subrecipient.DisplayName, subrecipient.EmailAddress) for subrecipient in message.subrecipients]))
+                msg_txt += 'Sent: %s\nDelivered: %s\n' % (message.ClientSubmitTime, message.MessageDeliveryTime)
+                msg_txt += 'MessageClass: %s\n' % (message.MessageClass)
                 if message.HasAttachments:
-                    msg_txt += u'Attachments: %s\n' % (u', '.join([subattachment.__repr__() for subattachment in message.subattachments]))
-                msg_txt += u'\n%s\n\n\n' % message.Body
+                    msg_txt += 'Attachments: %s\n' % (', '.join([subattachment.__repr__() for subattachment in message.subattachments]))
+                msg_txt += '\n%s\n\n\n' % message.Body
             if msg_txt:
                 write_file(filepath, unicode2ascii(msg_txt), 'w')
                 messages_completed += 1
@@ -2030,15 +2030,15 @@ class PST:
 
     def get_pst_status(self):
 
-        status = u'Valid PST: %s, Unicode: %s, CryptMethod: %s, Name: %s, Password: %s' % (self.header.validPST, self.header.is_unicode, self.header.bCryptMethod, self.messaging.message_store.getval(PropIdEnum.PidTagDisplayName), self.messaging.PasswordCRC32Hash)
+        status = 'Valid PST: %s, Unicode: %s, CryptMethod: %s, Name: %s, Password: %s' % (self.header.validPST, self.header.is_unicode, self.header.bCryptMethod, self.messaging.message_store.getval(PropIdEnum.PidTagDisplayName), self.messaging.PasswordCRC32Hash)
         return status
 
-    
+
     @staticmethod
     def bruteforce(charset, maxlength):
 
         return (''.join(candidate) for candidate in itertools.chain.from_iterable(itertools.product(charset, repeat=i) for i in range(1, maxlength + 1)))
-          
+
 
     @staticmethod
     def crack_password(crc, dictionary_file=''):
@@ -2061,12 +2061,12 @@ class PST:
 
 
 ###################################################################################################################################
-#  _   _ _   _ _ _ _           _____                 _   _                 
-# | | | | |_(_) (_) |_ _   _  |  ___|   _ _ __   ___| |_(_) ___  _ __  ___ 
+#  _   _ _   _ _ _ _           _____                 _   _
+# | | | | |_(_) (_) |_ _   _  |  ___|   _ _ __   ___| |_(_) ___  _ __  ___
 # | | | | __| | | | __| | | | | |_ | | | | '_ \ / __| __| |/ _ \| '_ \/ __|
 # | |_| | |_| | | | |_| |_| | |  _|| |_| | | | | (__| |_| | (_) | | | \__ \
 #  \___/ \__|_|_|_|\__|\__, | |_|   \__,_|_| |_|\___|\__|_|\___/|_| |_|___/
-#                      |___/                                               
+#                      |___/
 ###################################################################################################################################
 
 
@@ -2133,8 +2133,8 @@ def log_error(e):
 
 ###############################################################################################################################
 #
-#  _____         _     _____                 _   _                 
-# |_   _|__  ___| |_  |  ___|   _ _ __   ___| |_(_) ___  _ __  ___ 
+#  _____         _     _____                 _   _
+# |_   _|__  ___| |_  |  ___|   _ _ __   ___| |_(_) ___  _ __  ___
 #   | |/ _ \/ __| __| | |_ | | | | '_ \ / __| __| |/ _ \| '_ \/ __|
 #   | |  __/\__ \ |_  |  _|| |_| | | | | (__| |_| | (_) | | | \__ \
 #   |_|\___||___/\__| |_|   \__,_|_| |_|\___|\__|_|\___/|_| |_|___/
@@ -2146,9 +2146,9 @@ def log_error(e):
 def test_status_pst(pst_filepath):
 
     pst = PST(pst_filepath)
-    print(unicode2ascii(pst.get_pst_status()))
-    print('Total Messages: %s' % pst.get_total_message_count())
-    print('Total Attachments: %s' % pst.get_total_attachment_count())
+    sys.stdout.buffer.write((unicode2ascii(pst.get_pst_status())) + '\n'.encode('ascii','ignore'))
+    print(('Total Messages: %s' % pst.get_total_message_count()))
+    print(('Total Attachments: %s' % pst.get_total_attachment_count()))
     pst.close()
 
 
@@ -2163,7 +2163,7 @@ def test_dump_pst(pst_filepath, output_path):
     """ dump out all PST email attachments and emails (into text files) to output_path folder"""
 
     pst = PST(pst_filepath)
-    print(pst.get_pst_status())
+    print((pst.get_pst_status()))
 
     pbar = get_simple_progressbar('Messages: ')
     total_messages = pst.get_total_message_count()
@@ -2174,7 +2174,7 @@ def test_dump_pst(pst_filepath, output_path):
     total_attachments = pst.get_total_attachment_count()
     pst.export_all_attachments(output_path, pbar, total_attachments)
     pbar.finish()
-    
+
     pst.close()
 
 
@@ -2203,13 +2203,13 @@ def test_folder_psts(psts_folder):
             s += 'ERROR: %s\n' % e
 
     write_file(os.path.join(psts_folder, 'psts_test.txt'), s)
-     
-        
+
+
 
 ###################################################################################################################################
-#  __  __       _       
-# |  \/  | __ _(_)_ __  
-# | |\/| |/ _` | | '_ \ 
+#  __  __       _
+# |  \/  | __ _(_)_ __
+# | |\/| |/ _` | | '_ \
 # | |  | | (_| | | | | |
 # |_|  |_|\__,_|_|_| |_|
 #
@@ -2226,7 +2226,7 @@ if __name__=="__main__":
     arg_parser.add_argument('-o', dest='output_folder', default=output_folder, help='output folder')
     arg_parser.add_argument('-t', dest='debug', help=argparse.SUPPRESS, action='store_true', default=False) # hidden argument
 
-    args = arg_parser.parse_args()    
+    args = arg_parser.parse_args()
 
     if not args.debug:
 
