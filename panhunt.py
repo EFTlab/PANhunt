@@ -39,7 +39,8 @@ excluded_pans_string = defaults['excluded_pans_string']
 config_file = defaults['config_file']
 
 excluded_directories = None
-excluded_pans = []
+excluded_pans     = []
+excluded_pans_sub = []
 search_extensions = {}
 
 pan_regexs = {'Mastercard': re.compile('(?:\D|^)(5[1-5][0-9]{2}(?:\ |\-|)[0-9]{4}(?:\ |\-|)[0-9]{4}(?:\ |\-|)[0-9]{4})(?:\D|$)'), \
@@ -100,12 +101,15 @@ class PAN:
 
     @staticmethod
     def is_excluded(pan):
-        global excluded_pans
+        global excluded_pans, excluded_pans_sub
 
         pan = re.sub('[^\d]','', pan)
 
         for excluded_pan in excluded_pans:
             if pan == excluded_pan:
+                return True
+        for excluded_pan in excluded_pans_sub:
+            if pan.startswith(excluded_pan):
                 return True
         return False
 
@@ -237,7 +241,7 @@ def load_config_file():
 
 def set_global_parameters():
 
-    global excluded_directories_string, text_extensions_string, zip_extensions_string, special_extensions_string, mail_extensions_string, other_extensions_string, excluded_directories, search_extensions, excluded_pans_string, excluded_pans
+    global excluded_directories_string, text_extensions_string, zip_extensions_string, special_extensions_string, mail_extensions_string, other_extensions_string, excluded_directories, search_extensions, excluded_pans_string, excluded_pans, excluded_pans_sub
 
     excluded_directories = [exc_dir.lower() for exc_dir in excluded_directories_string.split(',')]
     search_extensions['TEXT'] = text_extensions_string.split(',')
@@ -246,7 +250,12 @@ def set_global_parameters():
     search_extensions['MAIL'] = mail_extensions_string.split(',')
     search_extensions['OTHER'] = other_extensions_string.split(',')
     if len(excluded_pans_string) > 0:
-        excluded_pans = excluded_pans_string.split(',')
+        excluded_pans_tmp = excluded_pans_string.split(',')
+        for excluded_pan in excluded_pans_tmp:
+            if excluded_pan.endswith('*'):
+                excluded_pans_sub.append(excluded_pan[0:-1])
+            else:
+                excluded_pans.append(excluded_pan)
 
 def hunt_pans(gauge_update_function=None):
 
