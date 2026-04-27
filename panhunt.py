@@ -43,9 +43,9 @@ excluded_pans     = []
 excluded_pans_sub = []
 search_extensions = {}
 
-pan_regexs = {'Mastercard': re.compile('(?:\D|^)(5[1-5][0-9]{2}(?:\ |\-|)[0-9]{4}(?:\ |\-|)[0-9]{4}(?:\ |\-|)[0-9]{4})(?:\D|$)'), \
-                'Visa': re.compile('(?:\D|^)(4[0-9]{3}(?:\ |\-|)[0-9]{4}(?:\ |\-|)[0-9]{4}(?:\ |\-|)[0-9]{4})(?:\D|$)'), \
-                'AMEX': re.compile('(?:\D|^)((?:34|37)[0-9]{2}(?:\ |\-|)[0-9]{6}(?:\ |\-|)[0-9]{5})(?:\D|$)')}
+pan_regexs = {'Mastercard': re.compile(r'(?:\D|^)(5[1-5][0-9]{2}(?:\ |\-|)[0-9]{4}(?:\ |\-|)[0-9]{4}(?:\ |\-|)[0-9]{4})(?:\D|$)'), \
+                'Visa': re.compile(r'(?:\D|^)(4[0-9]{3}(?:\ |\-|)[0-9]{4}(?:\ |\-|)[0-9]{4}(?:\ |\-|)[0-9]{4})(?:\D|$)'), \
+                'AMEX': re.compile(r'(?:\D|^)((?:34|37)[0-9]{2}(?:\ |\-|)[0-9]{6}(?:\ |\-|)[0-9]{5})(?:\D|$)')}
 
 
 ###################################################################################################################################
@@ -96,14 +96,14 @@ class PAN:
 
 
     def get_masked_pan(self):
-        return re.sub('\d','*',self.pan[:-4]) + self.pan[-4:]
+        return re.sub(r"\d",'*',self.pan[:-4]) + self.pan[-4:]
 
 
     @staticmethod
     def is_excluded(pan):
         global excluded_pans, excluded_pans_sub
 
-        pan = re.sub('[^\d]','', pan)
+        pan = re.sub(r'[^\d]','', pan)
 
         for excluded_pan in excluded_pans:
             if pan == excluded_pan:
@@ -117,7 +117,7 @@ class PAN:
     def is_valid_luhn_checksum(pan):
         """ from wikipedia: http://en.wikipedia.org/wiki/Luhn_algorithm"""
 
-        pan = re.sub('[^\d]','', pan)
+        pan = re.sub(r'[^\d]','', pan)
 
         def digits_of(n):
             return [int(d) for d in str(n)]
